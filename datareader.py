@@ -440,16 +440,21 @@ class YcbVideoReader(BopBaseReader):
 
     self.ob_ids = np.arange(1,22).astype(int).tolist()
     YCB_VIDEO_DIR = os.getenv('YCB_VIDEO_DIR')
-    names = sorted(os.listdir(f'{YCB_VIDEO_DIR}/models/'))
+    #names = sorted(os.listdir(f'{YCB_VIDEO_DIR}/models/no_png_copy/*.ply')) # fix here as also png files are in path and json
+    names = sorted([name for name in os.listdir(f'{YCB_VIDEO_DIR}/models/') if name.endswith('.ply')])
+    logging.info(f"names:  {names}")
     self.ob_id_to_names = {}
     self.name_to_ob_id = {}
     for i,ob_id in enumerate(self.ob_ids):
-      self.ob_id_to_names[ob_id] = names[i]
-      self.name_to_ob_id[names[i]] = ob_id
+      self.ob_id_to_names[ob_id] = names[i] 
+      self.name_to_ob_id[names[i]] = ob_id 
 
     if 'BOP' not in self.base_dir:
       with open(f'{self.base_dir}/../../keyframe.txt','r') as ff:
         self.keyframe_lines = ff.read().splitlines()
+    # fix here as bop is in path ( parent directory)
+    with open(f'{self.base_dir}/../../keyframe.txt','r') as ff:
+      self.keyframe_lines = ff.read().splitlines()
 
     self.load_symmetry_tfs()
     for ob_id in self.ob_ids:
@@ -480,9 +485,11 @@ class YcbVideoReader(BopBaseReader):
 
   def get_gt_mesh_file(self, ob_id):
     if 'BOP' in self.base_dir:
-      mesh_file = os.path.abspath(f'{self.base_dir}/../../ycbv_models/models/obj_{ob_id:06d}.ply')
+      # mesh_file = os.path.abspath(f'{self.base_dir}/../../ycbv_models/models/obj_{ob_id:06d}.ply')
+      mesh_file = f'{self.base_dir}/../../models/obj_{ob_id:06d}.ply'
     else:
-      mesh_file = f'{self.base_dir}/../../ycbv_models/models/obj_{ob_id:06d}.ply'
+        # mesh_file = f'{self.base_dir}/../../ycbv_models/models/obj_{ob_id:06d}.ply'
+        mesh_file = f'{self.base_dir}/../../models/obj_{ob_id:06d}.ply'
     return mesh_file
 
 
@@ -526,6 +533,10 @@ class YcbVideoReader(BopBaseReader):
     video_id = self.get_video_id()
     frame_id = int(os.path.basename(color_file).split('.')[0])
     key = f'{video_id:04d}/{frame_id:06d}'
+    #logging.info(f"key: {key}" )
+    #exit()
+    # dirty fix for missing keyframe.txt file
+    #return True
     return (key in self.keyframe_lines)
 
 

@@ -23,6 +23,9 @@ class FoundationPose:
     self.debug_dir = debug_dir
     os.makedirs(debug_dir, exist_ok=True)
 
+    # dirty bug fix for init reset object 
+    self.nb_of_reset = 0
+
     self.reset_object(model_pts, model_normals, symmetry_tfs=symmetry_tfs, mesh=mesh)
     self.make_rotation_grid(min_n_views=40, inplane_step=60)
 
@@ -42,13 +45,18 @@ class FoundationPose:
 
 
   def reset_object(self, model_pts, model_normals, symmetry_tfs=None, mesh=None):
+    self.nb_of_reset += 1
+
     max_xyz = mesh.vertices.max(axis=0)
     min_xyz = mesh.vertices.min(axis=0)
     self.model_center = (min_xyz+max_xyz)/2
     if mesh is not None:
       self.mesh_ori = mesh.copy()
       mesh = mesh.copy()
-      mesh.vertices = mesh.vertices - self.model_center.reshape(1,3)
+      if self.nb_of_reset > 1:
+        #logging.info(f"nb of resets: {self.nb_of_reset}")
+        mesh.vertices = mesh.vertices - self.model_center.reshape(1,3)
+        self.first = False
 
     model_pts = mesh.vertices
     self.diameter = compute_mesh_diameter(model_pts=mesh.vertices, n_sample=10000)
